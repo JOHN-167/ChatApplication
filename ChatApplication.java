@@ -97,8 +97,48 @@ public class ChatApplication extends JFrame {
         */
     
         bgPanel.setPreferredSize(new Dimension(getWidth(),getHeight()-80));
+        JComponent chat = new JComponent(){
+            @Override
+            public void paintComponent(Graphics g) {}
+        };
+        chat.setLayout(new BoxLayout(chat,BoxLayout.Y_AXIS));
+        bgPanel.add(chat);
+        try {
+            FileReader file = new FileReader("chatHistory.txt");
+                Scanner scan = new Scanner(file);
+                
+                while (scan.hasNextLine()){
+                    JComponent filler = new JComponent(){
+                        @Override
+                        public void paintComponent(Graphics g) {}
+                    };
+                    filler.setPreferredSize(new Dimension(20,20));
+                    String input = scan.nextLine();
+                    JLabel chatText = new JLabel(input);
+                    filler.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                    chatText.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                    chat.add(chatText,0);
+                    chat.add(filler,0);
+                }
+                scan.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
         JTextField chatField = new JTextField();
         JButton sendButton = new JButton("Send");
+        sendButton.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent a) {
+                try {
+                    FileWriter chatHistory = new FileWriter("chatHistory.txt");
+                    chatHistory.write(chatField.getText());
+                    chatHistory.close();
+                    chatField.setText("");
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
+        });
         chatField.setColumns(40);
         JPanel chatPanel = new JPanel();
         chatPanel.setBackground(Color.WHITE);
@@ -106,6 +146,8 @@ public class ChatApplication extends JFrame {
         chatPanel.add(sendButton);
         chatPanel.setPreferredSize(new Dimension(getWidth(),80));
         add(chatPanel);
+        
+        
     }
     public static void main(String[] args){
         new ChatApplication().setVisible(true);
