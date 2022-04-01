@@ -3,11 +3,17 @@ import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.event.*;
 import javax.swing.Timer;
 import java.io.*;
+import java.util.List;
 
 public class ChatApplication extends JFrame {
     //constructor
+    List<String> list = printTen("ChatHistory.txt");
+    JSlider slider = new JSlider(JSlider.VERTICAL,0,Math.max(list.size()-10,10),0);
+
+    protected boolean loggedIn = false;
     public ChatApplication(){
         setSize(600,480);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -15,8 +21,35 @@ public class ChatApplication extends JFrame {
         setLayout(new FlowLayout());
 
         //chat gui
-        JPanel bgPanel = new JPanel();
+        class BgPanel extends JPanel {
+            int sliderValue = 0;
+            List<String> list;
+            BgPanel(int sliderValue, List<String> list) {
+                this.sliderValue = sliderValue;
+                this.list = new ArrayList<>(list);
+            }
+            @Override
+            public void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                if(loggedIn == true){
+                    for (int i = 0; i < 10; i++){
+                        JComponent filler = new JComponent(){
+                            @Override
+                            public void paintComponent(Graphics g) {}
+                        };
+                        filler.setPreferredSize(new Dimension(20,20));
+                        JLabel chatText = new JLabel(list.get(sliderValue+i));
+                        filler.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                        chatText.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                        this.add(chatText,0);
+                        this.add(filler,0);
+                    }
+                }
+            }
+        };
+        BgPanel bgPanel = new BgPanel(slider.getValue(),list);
         bgPanel.setBackground(Color.PINK);
+        bgPanel.setLayout(new BoxLayout(bgPanel,BoxLayout.Y_AXIS));
         add(bgPanel);
 
         /*
@@ -96,13 +129,19 @@ public class ChatApplication extends JFrame {
         bgPanel.add(loginComponent);
         */
     
-        bgPanel.setPreferredSize(new Dimension(getWidth(),getHeight()-80));
-        JComponent chat = new JComponent(){
+        bgPanel.setPreferredSize(new Dimension(getWidth(),getHeight()-160));
+        slider.addChangeListener(new ChangeListener(){
             @Override
-            public void paintComponent(Graphics g) {}
-        };
-        chat.setLayout(new BoxLayout(chat,BoxLayout.Y_AXIS));
-        bgPanel.add(chat);
+            public void stateChanged(ChangeEvent e){
+                JSlider source = (JSlider)e.getSource();
+                if (!source.getValueIsAdjusting()){
+                    bgPanel.revalidate();
+                    bgPanel.repaint();
+                }
+            }
+        });
+        
+        /*
         try {
             FileReader file = new FileReader("chatHistory.txt");
             Scanner scan = new Scanner(file);
@@ -124,64 +163,32 @@ public class ChatApplication extends JFrame {
         } catch (Exception e) {
             System.out.println(e);
         }
+        */
         JTextField chatField = new JTextField();
         JButton sendButton = new JButton("Send");
         sendButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent a) {
-            if (!chatField.getText().isEmpty() && !chatField.getText().isBlank()){
-                chat.add(new JLabel("Works!"),0);
-                chat.add(new JButton("Works!"),0);
-
-                try {
-                    FileWriter chatHistory = new FileWriter("chatHistory.txt",true);
-                    chatHistory.append("\n" + chatField.getText());
-                    chatHistory.close();
-                    JLabel chatText = new JLabel(chatField.getText());
-                    chatText.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                System.out.println("Send Button pressed");
+                if (!chatField.getText().isEmpty() && !chatField.getText().isBlank()){
+                    try {
+                        FileWriter chatHistory = new FileWriter("chatHistory.txt",true);
+                        chatHistory.append("\n" + chatField.getText());
+                        chatHistory.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    list.add(chatField.getText());
+                    bgPanel.add(new JLabel(chatField.getText(),0));
                     JComponent filler = new JComponent(){
                         @Override
                         public void paintComponent(Graphics g) {}
                     };
-                    filler.setAlignmentX(Component.RIGHT_ALIGNMENT);
-                    filler.setPreferredSize(new Dimension(20,20));
-                    chat.add(chatText,0);
-                    chat.add(filler,0);
+                    bgPanel.add(filler,0);
                     chatField.setText("");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                
-                bgPanel.remove(chat);
-                JComponent chat = new JComponent(){
-                    @Override
-                    public void paintComponent(Graphics g) {}
-                };
-                chat.setLayout(new BoxLayout(chat,BoxLayout.Y_AXIS));
-                try {
-                    FileReader file = new FileReader("chatHistory.txt");
-                    Scanner scan = new Scanner(file);
-                    int count = 0;
-                    while (scan.hasNextLine() && count<10){
-                        JComponent filler = new JComponent(){
-                            @Override
-                            public void paintComponent(Graphics g) {}
-                        };
-                        filler.setPreferredSize(new Dimension(20,20));
-                        String input = scan.nextLine();
-                        JLabel chatText = new JLabel(input);
-                        filler.setAlignmentX(Component.RIGHT_ALIGNMENT);
-                        chatText.setAlignmentX(Component.RIGHT_ALIGNMENT);
-                        chat.add(chatText,0);
-                        chat.add(filler,0);
-                        count++;
-                    }
-                    scan.close();
-                } catch (Exception e) {
-                    e.printStackTrace();  
-                }
-                bgPanel.add(chat);
-            }                
+                    bgPanel.revalidate();
+                    bgPanel.repaint();
+                }                
             }
         });
         chatField.setColumns(40);
@@ -190,10 +197,26 @@ public class ChatApplication extends JFrame {
         chatPanel.add(chatField);
         chatPanel.add(sendButton);
         chatPanel.setPreferredSize(new Dimension(getWidth(),80));
-        chat.setAlignmentX(Component.RIGHT_ALIGNMENT);
         add(chatPanel);
-        
-        
+        add(slider);
+        bgPanel.revalidate();
+        bgPanel.repaint();        
+    }
+
+    public static List<String> printTen (String fileName){
+        List<String> output = new ArrayList<>();
+        try {
+            FileReader file = new FileReader(fileName);
+            Scanner scan = new Scanner(file);
+            while (scan.hasNextLine()){
+                String input = scan.nextLine();
+                output.add(input);
+            }
+            scan.close();
+        } catch (Exception e) {
+            e.printStackTrace();  
+        }
+        return output;
     }
     public static void main(String[] args){
         new ChatApplication().setVisible(true);
