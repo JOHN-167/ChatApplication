@@ -63,7 +63,7 @@ public class ChatApplication extends JFrame {
                     while (scan.hasNextLine() && successful == false){
                         String input = scan.nextLine(); 
                         Scanner sc = new Scanner(input);
-                        sc.useDelimiter("\t");
+                        sc.useDelimiter(",");
                         user = sc.next();
                         pass = sc.next();
                         System.out.printf("User = %s, Pass = %s%n",user,pass);
@@ -105,22 +105,22 @@ public class ChatApplication extends JFrame {
         bgPanel.add(chat);
         try {
             FileReader file = new FileReader("chatHistory.txt");
-                Scanner scan = new Scanner(file);
-                
-                while (scan.hasNextLine()){
-                    JComponent filler = new JComponent(){
-                        @Override
-                        public void paintComponent(Graphics g) {}
-                    };
-                    filler.setPreferredSize(new Dimension(20,20));
-                    String input = scan.nextLine();
-                    JLabel chatText = new JLabel(input);
-                    filler.setAlignmentX(Component.RIGHT_ALIGNMENT);
-                    chatText.setAlignmentX(Component.RIGHT_ALIGNMENT);
-                    chat.add(chatText,0);
-                    chat.add(filler,0);
-                }
-                scan.close();
+            Scanner scan = new Scanner(file);
+            
+            while (scan.hasNextLine()){
+                JComponent filler = new JComponent(){
+                    @Override
+                    public void paintComponent(Graphics g) {}
+                };
+                filler.setPreferredSize(new Dimension(20,20));
+                String input = scan.nextLine();
+                JLabel chatText = new JLabel(input);
+                filler.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                chatText.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                chat.add(chatText,0);
+                chat.add(filler,0);
+            }
+            scan.close();
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -129,14 +129,59 @@ public class ChatApplication extends JFrame {
         sendButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent a) {
+            if (!chatField.getText().isEmpty() && !chatField.getText().isBlank()){
+                chat.add(new JLabel("Works!"),0);
+                chat.add(new JButton("Works!"),0);
+
                 try {
-                    FileWriter chatHistory = new FileWriter("chatHistory.txt");
-                    chatHistory.write(chatField.getText());
+                    FileWriter chatHistory = new FileWriter("chatHistory.txt",true);
+                    chatHistory.append("\n" + chatField.getText());
                     chatHistory.close();
+                    JLabel chatText = new JLabel(chatField.getText());
+                    chatText.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                    JComponent filler = new JComponent(){
+                        @Override
+                        public void paintComponent(Graphics g) {}
+                    };
+                    filler.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                    filler.setPreferredSize(new Dimension(20,20));
+                    chat.add(chatText,0);
+                    chat.add(filler,0);
                     chatField.setText("");
                 } catch (Exception e) {
-                    System.out.println(e);
+                    e.printStackTrace();
                 }
+                
+                bgPanel.remove(chat);
+                JComponent chat = new JComponent(){
+                    @Override
+                    public void paintComponent(Graphics g) {}
+                };
+                chat.setLayout(new BoxLayout(chat,BoxLayout.Y_AXIS));
+                try {
+                    FileReader file = new FileReader("chatHistory.txt");
+                    Scanner scan = new Scanner(file);
+                    int count = 0;
+                    while (scan.hasNextLine() && count<10){
+                        JComponent filler = new JComponent(){
+                            @Override
+                            public void paintComponent(Graphics g) {}
+                        };
+                        filler.setPreferredSize(new Dimension(20,20));
+                        String input = scan.nextLine();
+                        JLabel chatText = new JLabel(input);
+                        filler.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                        chatText.setAlignmentX(Component.RIGHT_ALIGNMENT);
+                        chat.add(chatText,0);
+                        chat.add(filler,0);
+                        count++;
+                    }
+                    scan.close();
+                } catch (Exception e) {
+                    e.printStackTrace();  
+                }
+                bgPanel.add(chat);
+            }                
             }
         });
         chatField.setColumns(40);
@@ -145,6 +190,7 @@ public class ChatApplication extends JFrame {
         chatPanel.add(chatField);
         chatPanel.add(sendButton);
         chatPanel.setPreferredSize(new Dimension(getWidth(),80));
+        chat.setAlignmentX(Component.RIGHT_ALIGNMENT);
         add(chatPanel);
         
         
