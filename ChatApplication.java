@@ -11,10 +11,15 @@ import java.util.List;
 public class ChatApplication extends JFrame {
     //constructor
     List<String> list = printTen("ChatHistory.txt");
-    JSlider slider = new JSlider(JSlider.VERTICAL,0,Math.max(list.size()-10,10),0);
+    JScrollBar slider = new JScrollBar(JScrollBar.HORIZONTAL,0,10,0,Math.max(list.size()-5,50));
 
-    protected boolean loggedIn = false;
-    public ChatApplication(){
+    public static void printList(List<String> input){
+        for (String str : input)
+            System.out.println(str);
+    }
+
+    protected boolean loggedIn = true;
+    public ChatApplication() {
         setSize(600,480);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setFocusable(true);
@@ -32,7 +37,7 @@ public class ChatApplication extends JFrame {
             public void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 if(loggedIn == true){
-                    for (int i = 0; i < 10; i++){
+                    for (int i = 0; i < 5; i++){
                         JComponent filler = new JComponent(){
                             @Override
                             public void paintComponent(Graphics g) {}
@@ -130,13 +135,16 @@ public class ChatApplication extends JFrame {
         */
     
         bgPanel.setPreferredSize(new Dimension(getWidth(),getHeight()-160));
-        slider.addChangeListener(new ChangeListener(){
+        slider.addAdjustmentListener(new AdjustmentListener(){
             @Override
-            public void stateChanged(ChangeEvent e){
-                JSlider source = (JSlider)e.getSource();
-                if (!source.getValueIsAdjusting()){
+            public void adjustmentValueChanged(AdjustmentEvent e){
+                JScrollBar source = (JScrollBar)e.getSource();
+                if (source.getValueIsAdjusting()){
+                    System.out.println("repainting...");
+                    bgPanel.removeAll();
                     bgPanel.revalidate();
                     bgPanel.repaint();
+                    // printList(list);
                 }
             }
         });
